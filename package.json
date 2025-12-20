@@ -6,10 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:studio": "prisma studio",
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@prisma/client": "^5.15.0",
+    "dotenv": "^17.2.3",
     "next": "16.0.8",
+    "prisma": "^5.15.0",
     "react": "19.2.1",
     "react-dom": "19.2.1"
   },

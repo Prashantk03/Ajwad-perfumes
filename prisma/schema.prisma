@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String
+  phone     String
+  createdAt DateTime @default(now())
+  orders    Order[]
+  reviews   Review[]
+}
+
+model Product {
+  id              String           @id @default(uuid())
+  title           String
+  slug            String           @unique
+  description     String
+  brand           String?
+  fragranceFamily String?
+  concentration   String? // e.g. Attar, EDP, EDT
+  images          Json             @default("[]") //array of image URLs   
+  createdAt       DateTime         @default(now())
+  variants        ProductVariant[]
+  reviews         Review[]
+}
+
+model ProductVariant {
+  id         String      @id @default(uuid())
+  Product    Product     @relation(fields: [productId], references: [id])
+  productId  String
+  sku        String      @unique
+  price      Float
+  mrp        Float?
+  sizeMl     Int
+  stock      Int         @default(0)
+  orderItems OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  User        User?       @relation(fields: [userId], references: [id])
+  userId      String?
+  status      String      @default("pending") // pending, paid, shipped, delivered, cancelled
+  totalAmount Float
+  shipping    Json
+  paymentId   String?
+  createdAt   DateTime    @default(now())
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id        String         @id @default(uuid())
+  order     Order          @relation(fields: [orderId], references: [id])
+  orderId   String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  variantId String
+  qty       Int
+  priceEach Float
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
