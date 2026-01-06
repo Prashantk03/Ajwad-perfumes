@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
+import { createProductSchema } from "@/lib/validators/product.schema";
+import { ZodError } from "zod";
 
 export async function GET(request) {
   try {
@@ -45,31 +47,30 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-    try {
-        const body = await request.json();
+  try {
+    const body = await request.json();
 
-        const product = await prisma.product.create({
-            data: {
-                title: body.title,
-                slug: body.slug,
-                description: body.description,
-                brand: body.brand,
-                fragnanceFamily: body.fragnanceFamily,
-                concentration: body.concentration,
-                images: body.images,
-                variants: {
-                    create: body.variants,
-                },
-            },
-            include : { variants: true },
-        });
+    const validatedData = createProductSchema.parse(body);
 
-        return Response.json(product, { status: 201 });
-    } catch (err) {
-        console.error(err);
-        return Response.json(
-            { error: "Failed to create product" },
-            { status: 500 }
-        );
+    const product = await prisma.product.create({
+      data: {
+        ...validatedData,
+        variants: {
+          create: validatedData.variants,
+        },
+      },
+      include: { variants: true },
+    });
+
+    return Response.json(product, { status: 201 });
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return Response.json({ error: err.errors }, { status: 400 });
     }
+    console.error("POST ERROR",err);
+    return Response.json(
+      { error: "Failed to create product" },
+      { status: 500 }
+    );
+  }
 }

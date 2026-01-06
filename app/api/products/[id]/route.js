@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
+import { updateProductSchema } from "@/lib/validators/product.schema";
+import { ZodError } from "zod";
 
 export async function GET(_req, { params }) {
   try {
@@ -25,26 +27,21 @@ export async function GET(_req, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = await params; 
+    const { id } = await params;
     const body = await request.json();
 
-    console.log("ID:", id);
+    const validatedData = updateProductSchema.parse(body);
 
     const product = await prisma.product.update({
       where: { id },
-      data: {
-        title: body.title,
-        slug: body.slug,
-        description: body.description,
-        brand: body.brand,
-        fragranceFamily: body.fragranceFamily,
-        concentration: body.concentration,
-        images: body.images,
-      },
+      data: validatedData,
     });
 
     return Response.json(product, { status: 200 });
   } catch (err) {
+    if (err instanceof ZodError) {
+      return Response.json({ errors: err.errors }, { status: 400 });
+    }
     console.error("PUT ERROR:", err);
     return Response.json(
       { error: "Failed to update product" },
@@ -55,7 +52,7 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(_req, { params }) {
   try {
-    const { id } = await params; 
+    const { id } = await params;
 
     await prisma.productVariant.deleteMany({
       where: { productId: id },
